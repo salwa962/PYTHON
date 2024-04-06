@@ -1,0 +1,104 @@
+import tkinter as tk
+from tkinter import messagebox
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+from catboost import CatBoostClassifier
+
+class BMICalculator(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("BMI Calculator")
+        self.geometry("300x200")
+        
+        # Labels and entry widgets for weight and height input
+        self.label_weight = tk.Label(self, text="Enter your weight in kilograms:")
+        self.label_weight.pack()
+        self.entry_weight = tk.Entry(self)
+        self.entry_weight.pack()
+
+        self.label_height = tk.Label(self, text="Enter your height in meters:")
+        self.label_height.pack()
+        self.entry_height = tk.Entry(self)
+        self.entry_height.pack()
+
+        # Button to trigger BMI calculation
+        self.button_calculate = tk.Button(self, text="Calculate BMI", command=self.calculate_bmi)
+        self.button_calculate.pack()
+
+        # Label to display the BMI result
+        self.label_result = tk.Label(self, text="")
+        self.label_result.pack()
+
+        # Initialize decision tree and CatBoost classifiers
+        self.model_decision_tree = DecisionTreeClassifier(max_depth=3)  # Limit max depth to 3
+        self.model_catboost = CatBoostClassifier()  # Initialize CatBoost classifier
+
+        # Train the machine learning models
+        self.train_models()
+
+    def train_models(self):
+        # Load BMI dataset (example data)
+        # Replace this with your actual dataset
+        data = {
+            'weight': [50, 60, 70, 80, 90],
+            'height': [1.6, 1.7, 1.65, 1.75, 1.8],
+            'category': ['Underweight', 'Normal weight', 'Overweight', 'Obese', 'Obese']
+        }
+        X = np.array([[data['weight'][i], data['height'][i]] for i in range(len(data['weight']))])
+        y = np.array(data['category'])
+
+        # Train decision tree model
+        self.model_decision_tree.fit(X, y)
+
+        # Train CatBoost model
+        self.model_catboost.fit(X, y)
+
+    def calculate_bmi(self):
+        # Get weight and height from user input
+        weight = float(self.entry_weight.get())
+        height = float(self.entry_height.get())
+
+        # Calculate BMI
+        bmi = weight / np.square(height)
+
+        # Predict BMI category using decision tree and CatBoost models
+        bmi_category_decision_tree = self.predict_bmi_category_decision_tree(weight, height)
+        bmi_category_catboost = self.predict_bmi_category_catboost(weight, height)
+
+        # Interpret BMI
+        bmi_category = self.interpret_bmi(bmi)
+
+        # Display BMI result with categories
+        result_message = f"Your BMI is: {bmi:.2f}\n\n"
+        result_message += f"Category (Decision Tree): {bmi_category_decision_tree}\n"
+        result_message += f"Category (CatBoost): {bmi_category_catboost}\n"
+        result_message += f"Category (Manual Calculation): {bmi_category}"
+        self.label_result.config(text=result_message)
+
+    def predict_bmi_category_decision_tree(self, weight, height):
+        # Predict BMI category using decision tree model
+        return self.model_decision_tree.predict([[weight, height]])[0]
+
+    def predict_bmi_category_catboost(self, weight, height):
+        # Predict BMI category using CatBoost model
+        return self.model_catboost.predict([[weight, height]])[0]
+
+    def interpret_bmi(self, bmi):
+        # Interpret BMI into categories
+        if bmi < 18.5:
+            return "Underweight"
+        elif 18.5 <= bmi < 25:
+            return "Normal weight"
+        elif 25 <= bmi < 30:
+            return "Overweight"
+        else:
+            return "Obese"
+
+def main():
+    # Create and run BMI calculator app
+    app = BMICalculator()
+    app.mainloop()
+
+if __name__ == "__main__":
+    main()
+
